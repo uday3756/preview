@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, Instagram, Twitter, Youtube, Check } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, AtSign, Share2, PlayCircle, Check } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -28,8 +28,8 @@ const Contact = () => {
 
   const socials = [
     { icon: <Instagram size={20} />, label: 'Instagram', href: '#' },
-    { icon: <Twitter size={20} />, label: 'Twitter / X', href: '#' },
-    { icon: <Youtube size={20} />, label: 'YouTube', href: '#' },
+    { icon: <Share2 size={20} />, label: 'Twitter / X', href: '#' },
+    { icon: <PlayCircle size={20} />, label: 'YouTube', href: '#' },
   ];
 
   return (

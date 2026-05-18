@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowRight, Flame, Music, Mic2, Sparkles, Users } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
 
 const pageVariants = {
   initial: { opacity: 0, x: 20 },
@@ -53,8 +54,17 @@ const CATEGORIES = ['All', 'Music', 'Culture', 'Comedy', 'Wellness', 'Market', '
 const Event = () => {
   const [category, setCategory] = useState('All');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const filtered = generalEvents.filter(e => category === 'All' || e.category === category);
+
+  const handleCheckoutRedirect = (selectedEvent) => {
+    if (!user) {
+      navigate('/auth', { state: { redirectTo: '/checkout', event: selectedEvent } });
+    } else {
+      navigate('/checkout', { state: { event: selectedEvent } });
+    }
+  };
 
   return (
     <motion.div className="container" variants={pageVariants} initial="initial" animate="animate" exit="exit">
@@ -85,7 +95,7 @@ const Event = () => {
           <h2 style={{ fontSize: '1.8rem', fontWeight: '900', marginBottom: '6px' }}>Hubli Music Festival 2026</h2>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', marginBottom: '16px' }}>May 15–17 · Nrupatunga Ground · 4200+ attending</p>
           <button className="btn-primary" style={{ width: 'fit-content', padding: '10px 24px', fontSize: '0.9rem' }}
-            onClick={() => navigate('/checkout', { state: { event: generalEvents[0] } })}>
+            onClick={() => handleCheckoutRedirect(generalEvents[0])}>
             Get Tickets <ArrowRight size={16} />
           </button>
         </div>
@@ -130,7 +140,7 @@ const Event = () => {
                   <span className="event-price" style={{ fontSize: '1.1rem' }}>{event.price}</span>
                   <button
                     className="btn-primary" style={{ padding: '8px 18px', fontSize: '0.88rem' }}
-                    onClick={() => navigate('/checkout', { state: { event } })}
+                    onClick={() => handleCheckoutRedirect(event)}
                     disabled={event.status === 'closed'}
                   >
                     {event.status === 'closed' ? 'Ended' : 'Join Event'} {event.status !== 'closed' && <ArrowRight size={15} />}

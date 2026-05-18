@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState, useEffect } from "react";
+import { useAuth } from "../lib/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { cn } from "../../lib/utils";
 import { Bot, Send, X, Minimize2, Sparkles } from "lucide-react";
+import { getAIResponse } from "../lib/ai";
 
 const LUMINA_RESPONSES = [
   "Welcome to Lumina! I can help you find the best pubs, cafes, workshops, and movie roles near you 🎉",
@@ -48,14 +49,21 @@ const getResponse = (input) => {
 };
 
 export function LuminaChat() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState([
-    { id: 1, role: "ai", text: LUMINA_RESPONSES[0], time: new Date() },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef(null);
+
+  useEffect(() => {
+    const greeting = user 
+      ? `Welcome back, ${user.name.split(' ')[0]}! How can I assist you in your cinematic journey today? 🎬`
+      : LUMINA_RESPONSES[0];
+    
+    setMessages([{ id: 1, role: "ai", text: greeting, time: new Date() }]);
+  }, [user]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -71,8 +79,17 @@ export function LuminaChat() {
     setIsTyping(true);
     scrollToBottom();
 
-    setTimeout(() => {
-      const aiMsg = { id: Date.now() + 1, role: "ai", text: getResponse(text), time: new Date() };
+    setTimeout(async () => {
+      // Try to get AI response
+      const aiResponse = await getAIResponse(text);
+      
+      const aiMsg = { 
+        id: Date.now() + 1, 
+        role: "ai", 
+        text: aiResponse || getResponse(text), // Fallback to hardcoded if AI fails or no key
+        time: new Date() 
+      };
+      
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
       scrollToBottom();

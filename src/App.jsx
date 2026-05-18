@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './lib/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PageTransition } from './components/PageTransition';
 import { CustomCursor } from './components/CustomCursor';
@@ -15,6 +17,7 @@ import Hiring from './pages/Hiring';
 import Contact from './pages/Contact';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import Auth from './pages/Auth';
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -30,6 +33,7 @@ const AnimatedRoutes = () => {
         <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
         <Route path="/profile" element={<PageTransition><Profile /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><AdminDashboard /></PageTransition>} />
+        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
       </Routes>
     </AnimatePresence>
   );
@@ -103,18 +107,8 @@ function Navbar({ highContrast, setHighContrast }) {
               <Contrast size={16} />
             </button>
 
-            {/* Profile */}
-            <NavLink to="/profile" aria-label="My Profile"
-              style={{
-                width: '36px', height: '36px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8a2be2, #ff007f)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1rem', textDecoration: 'none',
-              }}
-              title="My Profile"
-            >
-              🎭
-            </NavLink>
+            {/* Profile / Auth */}
+            <AuthNav />
 
             {/* Book Now (desktop) */}
             <NavLink to="/events" className="btn-primary nav-book-btn" style={{ padding: '8px 20px', fontSize: '0.9rem' }} data-cursor="VIP">
@@ -194,6 +188,46 @@ function Navbar({ highContrast, setHighContrast }) {
   );
 }
 
+function AuthNav() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  if (user) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <NavLink to="/profile" aria-label="My Profile"
+          style={{
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #8a2be2, #ff007f)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.9rem', fontWeight: '700', textDecoration: 'none',
+            color: '#fff', border: '2px solid rgba(255,255,255,0.2)'
+          }}
+          title={`Logged in as ${user.name}`}
+        >
+          {user.name.split(' ').map(n => n[0]).join('')}
+        </NavLink>
+        <button 
+          onClick={logout}
+          style={{
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem',
+            cursor: 'pointer'
+          }}
+        >
+          Logout
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <NavLink to="/auth" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+      Sign In
+    </NavLink>
+  );
+}
+
 function App() {
   const [highContrast, setHighContrast] = useState(false);
 
@@ -205,19 +239,23 @@ function App() {
     }
   }, [highContrast]);
 
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
-    <>
-      <CustomCursor />
-      <Router>
-        <div className="app-container">
-          <Navbar highContrast={highContrast} setHighContrast={setHighContrast} />
-          <main className="main-content" id="main-content" role="main">
-            <AnimatedRoutes />
-          </main>
-        </div>
-        <LuminaChat />
-      </Router>
-    </>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthProvider>
+        <CustomCursor />
+        <Router>
+          <div className="app-container">
+            <Navbar highContrast={highContrast} setHighContrast={setHighContrast} />
+            <main className="main-content" id="main-content" role="main">
+              <AnimatedRoutes />
+            </main>
+          </div>
+          <LuminaChat />
+        </Router>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 

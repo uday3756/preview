@@ -5,6 +5,7 @@ import {
   Palette, Scissors, ArrowRight, Clock, Users, Camera,
   ChevronLeft, ChevronRight, Timer, UserCheck, Utensils, Dumbbell, Brush
 } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
 
 const pageVariants = {
   initial: { opacity: 0, x: -20 },
@@ -165,6 +166,7 @@ const Workshops = () => {
   const [filter, setFilter] = useState('all');
   const [registeredIds, setRegisteredIds] = useState([]);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const filtered = workshopsList.filter(w => filter === 'all' || w.category === filter);
   const nextUpcoming = workshopsList.filter(w => w.status === 'upcoming').sort((a, b) => a.date - b.date)[0];
@@ -172,7 +174,12 @@ const Workshops = () => {
   const handleRegister = (workshop) => {
     if (workshop.status === 'closed') return;
     setRegisteredIds(p => p.includes(workshop.id) ? p : [...p, workshop.id]);
-    navigate('/checkout', { state: { event: workshop } });
+    const workshopEvent = { ...workshop, type: 'workshop' };
+    if (!user) {
+      navigate('/auth', { state: { redirectTo: '/checkout', event: workshopEvent } });
+    } else {
+      navigate('/checkout', { state: { event: workshopEvent } });
+    }
   };
 
   return (

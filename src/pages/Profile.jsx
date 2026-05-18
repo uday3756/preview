@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Award, Star, Shield, Palette, Activity, Lock,
@@ -13,6 +15,8 @@ const pageVariants = {
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: <User size={16} /> },
+  { id: 'bookings', label: 'My Bookings', icon: <Ticket size={16} /> },
+  { id: 'applications', label: 'My Applications', icon: <Clapperboard size={16} /> },
   { id: 'achievements', label: 'Achievements', icon: <Award size={16} /> },
   { id: 'activity', label: 'Activity', icon: <Activity size={16} /> },
   { id: 'privacy', label: 'Privacy', icon: <Shield size={16} /> },
@@ -48,9 +52,44 @@ const THEMES = [
 ];
 
 const Profile = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
   const [privacy, setPrivacy] = useState({ publicProfile: true, showActivity: true, showBookmarks: false, emailNotifs: true });
   const [selectedTheme, setSelectedTheme] = useState('default');
+  const [bookings, setBookings] = useState([]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    const allBookings = JSON.parse(localStorage.getItem('lumina_bookings') || '[]');
+    const userBookings = allBookings.filter(b => b.email === user.email);
+    setBookings(userBookings);
+  }, [user, navigate]);
+
+  const handleCancelBooking = (refNum) => {
+    const confirmCancel = window.confirm(`Are you sure you want to cancel booking ${refNum}?`);
+    if (!confirmCancel) return;
+
+    const allBookings = JSON.parse(localStorage.getItem('lumina_bookings') || '[]');
+    const updated = allBookings.map(b => {
+      if (b.ref === refNum && b.email === user?.email) {
+        return { ...b, status: 'Cancelled' };
+      }
+      return b;
+    });
+    localStorage.setItem('lumina_bookings', JSON.stringify(updated));
+    setBookings(updated.filter(b => b.email === user?.email));
+  };
+
+  const handleResendEmail = (refNum) => {
+    alert(`✉️ Simulated: Booking confirmation email resent for ${refNum}!`);
+  };
+
+  if (!user) return null;
   const totalPoints = ACHIEVEMENTS.filter(a => a.earned).reduce((s, a) => s + a.points, 0);
   const level = Math.floor(totalPoints / 100) + 1;
   const nextLevel = level * 100;
@@ -91,9 +130,9 @@ const Profile = () => {
         </div>
 
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '4px' }}>Arjun Sharma</h1>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '4px' }}>{user.name}</h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '12px', fontSize: '0.95rem' }}>
-            🌟 Lumina Level {level} Explorer · Hubli, Karnataka
+            🌟 Lumina Level {user.level || level} Explorer · {user.location || 'Hubli, Karnataka'}
           </p>
 
           {/* XP Bar */}
@@ -114,14 +153,20 @@ const Profile = () => {
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <span style={{ background: 'rgba(138,43,226,0.2)', color: 'var(--accent-primary)', padding: '4px 12px', borderRadius: '20px', fontWeight: '700', fontSize: '0.82rem' }}>
-              ⚡ {totalPoints} XP
+              ⚡ {user.xp || totalPoints} XP
             </span>
             <span style={{ background: 'rgba(0,255,136,0.1)', color: 'var(--success)', padding: '4px 12px', borderRadius: '20px', fontWeight: '700', fontSize: '0.82rem' }}>
               🏆 {ACHIEVEMENTS.filter(a => a.earned).length} Badges
             </span>
             <span style={{ background: 'rgba(255,184,0,0.1)', color: '#ffb800', padding: '4px 12px', borderRadius: '20px', fontWeight: '700', fontSize: '0.82rem' }}>
-              🎯 Level {level}
+              🎯 Level {user.level || level}
             </span>
+            <button 
+              onClick={logout}
+              style={{ background: 'rgba(255,71,87,0.1)', color: '#ff4757', padding: '4px 12px', borderRadius: '20px', fontWeight: '700', fontSize: '0.82rem', border: '1px solid rgba(255,71,87,0.2)', cursor: 'pointer' }}
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </motion.div>
@@ -153,13 +198,13 @@ const Profile = () => {
           <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               {[
-                { label: 'Events Attended', value: '8', color: '#ffb800', icon: '🎉' },
-                { label: 'Workshops Done', value: '5', color: 'var(--success)', icon: '🎨' },
-                { label: 'Roles Applied', value: '3', color: 'var(--accent-primary)', icon: '🎬' },
+                { label: 'Events Attended', value: bookings.filter(b => b.status === 'Confirmed' && b.type === 'event').length || '0', color: '#ffb800', icon: '🎉' },
+                { label: 'Workshops Done', value: bookings.filter(b => b.status === 'Confirmed' && b.type === 'workshop').length || '0', color: 'var(--success)', icon: '🎨' },
+                { label: 'Tables Booked', value: bookings.filter(b => b.status === 'Confirmed' && b.type === 'venue').length || '0', color: 'var(--accent-primary)', icon: '🍽️' },
                 { label: 'Reviews Left', value: '12', color: 'var(--accent-secondary)', icon: '⭐' },
               ].map((stat, i) => (
                 <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }} className="glass-panel" style={{ textAlign: 'center', padding: '28px 16px' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{stat.icon}</div>
+                   <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{stat.icon}</div>
                   <div style={{ fontSize: '2.5rem', fontWeight: '900', color: stat.color, marginBottom: '4px', lineHeight: 1 }}>{stat.value}</div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: '600' }}>{stat.label}</div>
                 </motion.div>
@@ -168,7 +213,120 @@ const Profile = () => {
           </motion.div>
         )}
 
-        {/* ACHIEVEMENTS */}
+        {/* BOOKINGS */}
+        {tab === 'bookings' && (
+          <motion.div key="bookings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            {bookings.length === 0 ? (
+              <div className="glass-panel" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+                <Ticket size={48} style={{ opacity: 0.3, marginBottom: '16px', margin: '0 auto' }} />
+                <h3 style={{ fontWeight: '700', color: '#fff', marginBottom: '8px' }}>No Active Bookings</h3>
+                <p style={{ fontSize: '0.9rem', marginBottom: '20px' }}>You haven't booked any events, tables, or workshops yet.</p>
+                <button className="btn-primary" style={{ margin: '0 auto' }} onClick={() => navigate('/event')}>Explore Events</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {bookings.map((booking, i) => (
+                  <motion.div
+                    key={booking.ref}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className="glass-panel"
+                    style={{
+                      padding: '24px',
+                      border: `1px solid ${booking.status === 'Cancelled' ? 'rgba(255, 71, 87, 0.15)' : 'rgba(255,255,255,0.08)'}`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '20px',
+                      opacity: booking.status === 'Cancelled' ? 0.7 : 1
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <img src={booking.image} alt={booking.title} style={{ width: '70px', height: '70px', borderRadius: '12px', objectFit: 'cover' }} />
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{
+                            background: booking.type === 'venue' ? 'rgba(255,184,0,0.1)' : booking.type === 'workshop' ? 'rgba(0,255,136,0.1)' : 'rgba(138,43,226,0.1)',
+                            color: booking.type === 'venue' ? '#ffb800' : booking.type === 'workshop' ? 'var(--success)' : 'var(--accent-primary)',
+                            padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: '800', textTransform: 'uppercase'
+                          }}>
+                            {booking.type === 'venue' ? 'Table' : booking.type}
+                          </span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                            Ref: {booking.ref}
+                          </span>
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff', marginBottom: '6px' }}>{booking.title}</h3>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13} /> {booking.date}</span>
+                          {booking.time && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={13} /> {booking.time}</span>
+                          {booking.category && booking.category !== 'N/A' && <span style={{ color: '#ffb800', fontWeight: '700' }}>👑 {booking.category}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '150px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Amount Paid</span>
+                        <div style={{ fontSize: '1.3rem', fontWeight: '900', color: 'var(--success)' }}>{booking.price}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        {booking.status === 'Cancelled' ? (
+                          <span style={{ color: 'var(--danger)', fontSize: '0.85rem', fontWeight: '700', padding: '4px 10px', background: 'rgba(255, 71, 87, 0.08)', borderRadius: '8px', border: '1px solid rgba(255, 71, 87, 0.2)' }}>
+                            Cancelled
+                          </span>
+                        ) : (
+                          <>
+                            <button onClick={() => handleResendEmail(booking.ref)} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.78rem' }}>
+                              Resend Email
+                            </button>
+                            <button onClick={() => handleCancelBooking(booking.ref)} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.78rem', borderColor: 'rgba(255, 71, 87, 0.4)', color: 'rgb(255, 71, 87)', background: 'transparent' }} onMouseEnter={(e) => { e.target.style.background = 'rgba(255,71,87,0.05)' }} onMouseLeave={(e) => { e.target.style.background = 'transparent' }}>
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* APPLICATIONS */}
+        {tab === 'applications' && (
+          <motion.div key="applications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+              {[
+                { title: 'Junior Artist - KGF Chapter 1', status: 'Under Review', date: 'Applied 2 days ago', studio: 'Hombale Films', color: '#ffb800' },
+                { title: 'Folk Dancer - Kantara', status: 'Accepted', date: 'Applied 1 week ago', studio: 'Hombale Films', color: 'var(--success)' },
+                { title: 'Sound Engineer - KGF Chapter 2', status: 'Interpreting', date: 'Applied 5 days ago', studio: 'Hombale Films', color: 'var(--accent-primary)' },
+              ].map((app, i) => (
+                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="glass-panel" style={{ padding: '20px', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '15px', right: '15px', background: `${app.color}18`, color: app.color, padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', border: `1px solid ${app.color}33` }}>
+                    {app.status}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Clapperboard size={20} color="var(--accent-primary)" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '1rem' }}>{app.title}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{app.studio}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{app.date}</span>
+                    <button style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>View Details</button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
         {tab === 'achievements' && (
           <motion.div key="achievements" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>

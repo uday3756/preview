@@ -5,6 +5,7 @@ import {
   MapPin, Clock, ArrowRight, Star, Music, Coffee, DollarSign,
   Filter, X, ChevronDown, Tag, Flame, Bike, UtensilsCrossed, Map
 } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
 
 /** ── Location Data: Hubli & Dharwad ── **/
 const venuesList = [
@@ -252,6 +253,16 @@ const Events = () => {
   const [mapVenue, setMapVenue] = useState(null);
   const [expandedReviews, setExpandedReviews] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleBookingRedirect = (selectedVenue) => {
+    const venueEvent = { ...selectedVenue, title: selectedVenue.title, type: 'venue' };
+    if (!user) {
+      navigate('/auth', { state: { redirectTo: '/checkout', event: venueEvent } });
+    } else {
+      navigate('/checkout', { state: { event: venueEvent } });
+    }
+  };
 
   const prices = ['all', '$', '$$', '$$$'];
   const cuisines = ['all', 'Multi-Cuisine', 'North Indian', 'Continental', 'Fusion', 'European', 'Pan-Asian'];
@@ -492,7 +503,7 @@ const Events = () => {
                     <button
                       className="btn-primary"
                       style={{ padding: '8px 18px', fontSize: '0.88rem' }}
-                      onClick={() => navigate('/checkout', { state: { event: { ...venue, title: venue.title } } })}
+                      onClick={() => handleBookingRedirect(venue)}
                       disabled={venue.status === 'closed'}
                     >
                       {venue.status === 'closed' ? 'Closed' : 'Book Table'} {venue.status !== 'closed' && <ArrowRight size={15} />}

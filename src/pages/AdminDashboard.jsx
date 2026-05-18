@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../lib/AuthContext';
 import { motion } from 'framer-motion';
-import { BarChart2, Users, TrendingUp, Calendar, Search, Eye, Ticket, Star, ArrowUp, ArrowDown } from 'lucide-react';
+import { BarChart2, Users, TrendingUp, Calendar, Search, Eye, Ticket, Star, ArrowUp, ArrowDown, ShieldAlert } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -55,7 +57,33 @@ function SimpleBar({ value, max, color }) {
 }
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [period, setPeriod] = useState('7d');
+
+  useEffect(() => {
+    if (!user || user.email !== 'admin@lumina.com') {
+      // Small delay to show the "Access Denied" state if we want, 
+      // but usually a quick redirect is better.
+      const timer = setTimeout(() => navigate('/auth'), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, navigate]);
+
+  if (!user || user.email !== 'admin@lumina.com') {
+    return (
+      <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <ShieldAlert size={80} color="var(--danger)" style={{ marginBottom: '24px', filter: 'drop-shadow(0 0 15px rgba(255,51,102,0.4))' }} />
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '16px' }}>Access Denied</h1>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 32px' }}>
+            This portal is restricted to Lumina Administrators. You will be redirected shortly.
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/')}>Return Home</button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <motion.div className="container" variants={pageVariants} initial="initial" animate="animate" exit="exit" style={{ paddingBottom: '60px' }}>

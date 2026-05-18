@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, Sparkles, ChevronDown, ArrowRight } from 'lucide-react';
 import { ScrollExpandMedia } from '../components/ScrollExpansionHero';
 import { LandingAccordion } from '../components/InteractiveImageAccordion';
+import { useAuth } from '../lib/AuthContext';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <motion.div 
@@ -18,8 +20,8 @@ const Home = () => {
       <ScrollExpandMedia
         mediaSrc="/movies/toxic.mp4"
         bgImageSrc="/movies/salar.jpg"
-        title="IMMERSIVE CINEMA"
-        date="Next Generation Casting"
+        title={user ? `WELCOME, ${user.name.split(' ')[0].toUpperCase()}` : "IMMERSIVE CINEMA"}
+        date={user ? "Your Personalized Cinematic Portal" : "Next Generation Casting"}
         scrollToExpand="SCROLL TO EXPAND"
       >
         {/* Animated Scroll Explanations / Showcase Ads */}
