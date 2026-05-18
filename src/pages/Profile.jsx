@@ -261,9 +261,19 @@ const Profile = () => {
                         </div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff', marginBottom: '6px' }}>{booking.title}</h3>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13} /> {booking.date}</span>
-                          {booking.time && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={13} /> {booking.time}</span>
-                          {booking.category && booking.category !== 'N/A' && <span style={{ color: '#ffb800', fontWeight: '700' }}>👑 {booking.category}</span>}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Calendar size={13} /> {booking.date}
+                          </span>
+                          {booking.time && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Clock size={13} /> {booking.time}
+                            </span>
+                          )}
+                          {booking.category && booking.category !== 'N/A' && (
+                            <span style={{ color: '#ffb800', fontWeight: '700' }}>
+                              👑 {booking.category}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
