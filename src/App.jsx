@@ -7,6 +7,7 @@ import { PageTransition } from './components/PageTransition';
 import { CustomCursor } from './components/CustomCursor';
 import { LuminaChat } from './components/LuminaChat';
 import { Menu, X, Moon, Sun, Contrast } from 'lucide-react';
+import { GlobalSearchBar } from './components/GlobalSearchBar';
 
 import Home from './pages/Home';
 import Events from './pages/Events';
@@ -188,6 +189,18 @@ function Navbar({ highContrast, setHighContrast }) {
   );
 }
 
+const SearchAndNavbar = ({ highContrast, setHighContrast }) => {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+
+  return (
+    <>
+      {!isHome && <GlobalSearchBar />}
+      <Navbar highContrast={highContrast} setHighContrast={setHighContrast} />
+    </>
+  );
+};
+
 function AuthNav() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -247,7 +260,7 @@ function App() {
         <CustomCursor />
         <Router>
           <div className="app-container">
-            <Navbar highContrast={highContrast} setHighContrast={setHighContrast} />
+            <SearchAndNavbar highContrast={highContrast} setHighContrast={setHighContrast} />
             <main className="main-content" id="main-content" role="main">
               <AnimatedRoutes />
             </main>
