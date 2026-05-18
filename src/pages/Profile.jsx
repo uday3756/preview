@@ -4,7 +4,8 @@ import { useAuth } from '../lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Award, Star, Shield, Palette, Activity, Lock,
-  Bell, Eye, EyeOff, ChevronRight, Trophy, Flame, Ticket, Clapperboard, Check
+  Bell, Eye, EyeOff, ChevronRight, Trophy, Flame, Ticket, Clapperboard, Check,
+  Calendar, Clock
 } from 'lucide-react';
 
 const pageVariants = {
